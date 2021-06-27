@@ -15,8 +15,14 @@ BUILD_DEPS := $(BUILD_OBJS:.o=.d)
 app: $(BUILD_OBJS)
 	$(CC) -o $(APP_Name) $^
 
+.PHONY: clean
 clean:
+	rm -f $(BUILD_OBJS) $(BUILD_DEPS)
+
+.PHONY: purge
+purge:
 	rm -f $(BUILD_OBJS) $(BUILD_DEPS) $(APP_Name)
+	rm -f $(BINDIR)/$(APP_Name)
 
 install: app
 	install --mode=755 $(APP_Name) $(BINDIR)
