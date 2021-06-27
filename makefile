@@ -1,13 +1,12 @@
 APP_Name := app
 CC := aarch64-linux-gnu-g++-8
-CCV := -std=gnu++2a
+CCSTDV := -std=gnu++2a
 DEPFLAGS := -MMD
 WFLAGS := -Wall -Werror -Wextra -Wpedantic
-CXXFLAGS := $(WFLAGS) $(CCV) $(DEPFLAGS)
+CXXFLAGS := $(WFLAGS) $(CCSTDV) $(DEPFLAGS)
 BINDIR := $(DESTDIR)/usr/bin
 
 CXXFILES := main.cpp $(wildcard **/*.cpp)
-
 BUILD_OBJS := $(CXXFILES:.cpp=.o)
 BUILD_DEPS := $(BUILD_OBJS:.o=.d)
 
