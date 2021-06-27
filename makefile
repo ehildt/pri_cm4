@@ -1,8 +1,8 @@
 APP_Name := pwmfan
-CC := aarch64-linux-gnu-g++-8
+CC := g++
 CCSTDV := -std=gnu++2a
 DEPFLAGS := -MMD
-WFLAGS := -Wall -Werror -Wextra -Wpedantic
+WFLAGS := -Wall -Werror -Wextra -Wpedantic -g
 CXXFLAGS := $(WFLAGS) $(CCSTDV) $(DEPFLAGS)
 BINDIR := $(DESTDIR)/usr/bin
 
@@ -10,7 +10,7 @@ CXXFILES := main.cpp $(wildcard **/*.cpp)
 BUILD_OBJS := $(CXXFILES:.cpp=.o)
 BUILD_DEPS := $(BUILD_OBJS:.o=.d)
 
--include $(BUILD_DEPS)
+all: $(APP_Name)
 
 pwmfan: $(BUILD_OBJS)
 	$(CC) -o $(APP_Name) $^
@@ -30,3 +30,5 @@ uninstall:
 	rm -f $(BINDIR)/$(APP_Name)
 
 .PHONY : all
+
+-include $(BUILD_DEPS)
