@@ -8,16 +8,16 @@ BINDIR := $(DESTDIR)/usr/bin
 
 CXXFILES := main.cpp $(wildcard **/*.cpp)
 
-objs := $(CXXFILES:.cpp=.o)
-deps := $(objs:.o=.d)
+BUILD_OBJS := $(CXXFILES:.cpp=.o)
+BUILD_DEPS := $(BUILD_OBJS:.o=.d)
 
--include $(deps)
+-include $(BUILD_DEPS)
 
 app: $(objs)
 	$(CC) -o $(APP_Name) $^
 
 clean:
-	rm -f $(objs) $(deps) $(APP_Name)
+	rm -f $(objs) $(BUILD_DEPS) $(APP_Name)
 
 install: app
 	install --mode=755 $(APP_Name) $(BINDIR)
