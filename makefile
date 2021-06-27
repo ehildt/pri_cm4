@@ -12,11 +12,11 @@ BUILD_DEPS := $(BUILD_OBJS:.o=.d)
 
 -include $(BUILD_DEPS)
 
-app: $(objs)
+app: $(BUILD_OBJS)
 	$(CC) -o $(APP_Name) $^
 
 clean:
-	rm -f $(objs) $(BUILD_DEPS) $(APP_Name)
+	rm -f $(BUILD_OBJS) $(BUILD_DEPS) $(APP_Name)
 
 install: app
 	install --mode=755 $(APP_Name) $(BINDIR)
