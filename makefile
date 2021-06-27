@@ -6,8 +6,9 @@ WFLAGS := -Wall -Werror -Wextra -Wpedantic
 CXXFLAGS := $(WFLAGS) $(CCV) $(DEPFLAGS)
 BINDIR := $(DESTDIR)/usr/bin
 
-src := $(wildcard *.cpp) $(wildcard gpio/*.cpp)
-objs := $(src:.cpp=.o)
+CXXFILES := main.cpp $(wildcard **/*.cpp)
+
+objs := $(CXXFILES:.cpp=.o)
 deps := $(objs:.o=.d)
 
 -include $(deps)
