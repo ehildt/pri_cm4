@@ -10,7 +10,6 @@ CXXFILES := main.cpp $(wildcard **/*.cpp)
 BUILD_OBJS := $(CXXFILES:.cpp=.o)
 BUILD_DEPS := $(BUILD_OBJS:.o=.d)
 
--include $(BUILD_DEPS)
 
 all: $(APP_Name)
 
@@ -32,3 +31,5 @@ uninstall:
 	rm -f $(BINDIR)/$(APP_Name)
 
 .PHONY : all
+
+-include $(BUILD_DEPS)
