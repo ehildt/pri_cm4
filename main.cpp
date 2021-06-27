@@ -1,11 +1,17 @@
+#include <unistd.h>
 #include <iostream>
-#include "gpio/gpio.hpp"
 #include "gpio/gpio.hpp"
 
 using namespace std;
 
 int main(void)
 {
+    while (true)
+    {
+        cout << "boom" << endl;
+        sleep(1);
+    }
+
     string fruit = "apple";
     string fruit2 = "banana";
     int pin2 = 2;
