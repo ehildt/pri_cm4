@@ -1,3 +1,7 @@
+SHELL = /bin/sh
+.SUFFIXES:
+.SUFFIXES: .cpp .o .d
+
 # compiler setup
 CC := g++
 DEP_FLAGS := -MMD
@@ -8,18 +12,17 @@ CXXFLAGS := $(W_FLAGS) $(CC_STD_VERSION) $(DEP_FLAGS)
 
 # app setup
 APP_NAME := pwmfan
-BUILD_DIR := build
 BIN_DIR := $(DESTDIR)/usr/bin
 
 # source setup
-CXXFILES := main.cpp $(wildcard ./**/*.cpp)
-BUILD_OBJS := $(CXXFILES:.cpp=.o)
+SRC_FILES := $(wildcard *.cpp) $(wildcard **/*.cpp)
+BUILD_OBJS := $(patsubst %.cpp,%.o,$(SRC_FILES))
 BUILD_DEPS := $(BUILD_OBJS:.o=.d)
 
 all: $(APP_NAME)
 
-pwmfan: $(BUILD_OBJS)
-	$(CC) -o $(APP_NAME) $^
+$(APP_NAME): $(BUILD_OBJS)
+	$(CC) $^ -o $@
 
 clean:
 	rm -f $(BUILD_OBJS) $(BUILD_DEPS) $(APP_NAME)
