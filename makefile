@@ -4,7 +4,7 @@ SHELL = /bin/sh
 
 # compiler setup
 CC := g++
-DEP_FLAGS := -MMD
+DEP_FLAGS := -MMD -MD
 DEBUG_FLAGS := -g
 CC_STD_VERSION := -std=gnu++2a
 W_FLAGS := -Wall -Werror -Wextra -Wpedantic $(DEBUG_FLAGS)
@@ -16,7 +16,7 @@ BIN_DIR := $(DESTDIR)/usr/bin
 
 # source setup
 SRC_FILES := $(wildcard *.cpp) $(wildcard **/*.cpp)
-BUILD_OBJS := $(patsubst %.cpp,%.o,$(SRC_FILES))
+BUILD_OBJS := $(SRC_FILES:%.cpp=%.o)
 BUILD_DEPS := $(BUILD_OBJS:.o=.d)
 
 all: $(APP_NAME)
@@ -31,7 +31,7 @@ purge:
 	rm -f $(BUILD_OBJS) $(BUILD_DEPS) $(APP_NAME)
 	make uninstall
 
-install: app
+install: $(APP_NAME)
 	install --mode=755 $(APP_NAME) $(BIN_DIR)
 	make clean
 
