@@ -1,34 +1,39 @@
-APP_Name := pwmfan
+# compiler setup
 CC := g++
-CCSTDV := -std=gnu++2a
-DEPFLAGS := -MMD
-WFLAGS := -Wall -Werror -Wextra -Wpedantic -g
-CXXFLAGS := $(WFLAGS) $(CCSTDV) $(DEPFLAGS)
-BINDIR := $(DESTDIR)/usr/bin
+DEP_FLAGS := -MMD
+DEBUG_FLAGS := -g
+CC_STD_VERSION := -std=gnu++2a
+W_FLAGS := -Wall -Werror -Wextra -Wpedantic $(DEBUG_FLAGS)
+CXXFLAGS := $(W_FLAGS) $(CC_STD_VERSION) $(DEP_FLAGS)
 
-CXXFILES := main.cpp $(wildcard **/*.cpp)
+# app setup
+APP_NAME := pwmfan
+BUILD_DIR := build
+BIN_DIR := $(DESTDIR)/usr/bin
+
+# source setup
+CXXFILES := main.cpp $(wildcard ./**/*.cpp)
 BUILD_OBJS := $(CXXFILES:.cpp=.o)
 BUILD_DEPS := $(BUILD_OBJS:.o=.d)
 
-
-all: $(APP_Name)
+all: $(APP_NAME)
 
 pwmfan: $(BUILD_OBJS)
-	$(CC) -o $(APP_Name) $^
+	$(CC) -o $(APP_NAME) $^
 
 clean:
-	rm -f $(BUILD_OBJS) $(BUILD_DEPS) $(APP_Name)
+	rm -f $(BUILD_OBJS) $(BUILD_DEPS) $(APP_NAME)
 
 purge:
-	rm -f $(BUILD_OBJS) $(BUILD_DEPS) $(APP_Name)
+	rm -f $(BUILD_OBJS) $(BUILD_DEPS) $(APP_NAME)
 	make uninstall
 
 install: app
-	install --mode=755 $(APP_Name) $(BINDIR)
+	install --mode=755 $(APP_NAME) $(BIN_DIR)
 	make clean
 
 uninstall:
-	rm -f $(BINDIR)/$(APP_Name)
+	rm -f $(BIN_DIR)/$(APP_NAME)
 
 .PHONY : all
 
