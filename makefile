@@ -4,7 +4,7 @@ SHELL = /bin/sh
 
 # compiler setup
 CC := g++
-DEP_FLAGS := -MMD -MD
+DEP_FLAGS := -MMD
 DEBUG_FLAGS := -g
 CC_STD_VERSION := -std=gnu++2a
 W_FLAGS := -Wall -Werror -Wextra -Wpedantic $(DEBUG_FLAGS)
