@@ -1,60 +1,54 @@
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
+
 #include <fcntl.h>
+#include <iostream>
+#include <unistd.h>
 #include <sys/ioctl.h>
 #include <linux/i2c-dev.h>
 
-#include <iostream>
-
+using std::cerr;
+using std::cout;
+using std::string;
 using std::to_string;
 
 int main(void)
 {
-    int file;
-    const char *filename = "/dev/i2c-10";
-    if ((file = open(filename, O_RDWR)) < 0)
+    do
     {
-        perror("Failed to open the i2c bus");
-        exit(1);
-    }
+        char16_t TEMP_BUFFER;
+        int TEMP_DESCRIPTOR;
+        string TEMP_NAME = "/sys/devices/virtual/thermal/thermal_zone0/temp";
+        if ((TEMP_DESCRIPTOR = open(TEMP_NAME.c_str(), O_RDONLY)) < 0)
+            exit(1);
 
-    int addr = 0x2f; // The I2C address of the ADC
-    int reg = 0x30;
-    if (ioctl(file, I2C_SLAVE, addr) < 0)
-    {
-        printf("Failed to acquire bus access %d on %d and/or talk to slave.\n", addr, reg);
-        exit(1);
-    }
+        read(TEMP_DESCRIPTOR, &TEMP_BUFFER, sizeof(char16_t));
+        close(TEMP_DESCRIPTOR);
+        int myval = TEMP_BUFFER;
+        string temperature = string("echo temp ").append(to_string(myval));
+        system(temperature.c_str());
 
-    char buf[2] = {(char)reg, (char)125};
+        int FILE_DESCRIPTOR;
+        char I2C_CHIP_ADDRESS = 0x2f;
+        char I2C_CHIP_REGISTER = 0x30;
+        char I2C_INIT_VALUE = 0x00;
+        string FILE_NAME = "/dev/i2c-10";
+        char BUFFER[] = {I2C_CHIP_REGISTER, I2C_INIT_VALUE};
 
-    if (write(file, buf, 2) < 0)
-    {
-        /* ERROR HANDLING: i2c transaction failed */
-        printf("Failed to read from the i2c bus.\n");
-        printf("output %s", buf);
-        printf("\n\n");
-        exit(1);
-    }
+        if ((FILE_DESCRIPTOR = open(FILE_NAME.c_str(), O_RDWR)) < 0)
+            exit(1);
 
-    buf[0] = 2;
+        if (ioctl(FILE_DESCRIPTOR, I2C_SLAVE, I2C_CHIP_ADDRESS) < 0)
+            exit(1);
 
-    if (read(file, buf, 1) < 0)
-    {
-        /* ERROR HANDLING: i2c transaction failed */
-        printf("Failed to read from the i2c bus.\n");
-        printf(buf);
-        printf("\n\n");
-        exit(1);
-    }
+        if (pwrite(FILE_DESCRIPTOR, BUFFER, 2, 0) < 0)
+            exit(1);
 
-    while (true)
-    {
-        const float sum = buf[0] / 255.0 * 100;
-        std::string tmp = "echo " + to_string(sum);
-        system(tmp.c_str());
+        pread(FILE_DESCRIPTOR, BUFFER, 1, 0);
+        close(FILE_DESCRIPTOR);
+        const float sum = (int)BUFFER[0] / 255.0 * 100;
+        string tmp = " \"fan: %.2f\n\" " + to_string(sum);
+        system(string("printf").append(tmp).c_str());
+
         sleep(1);
-    }
+    } while (true);
 }
