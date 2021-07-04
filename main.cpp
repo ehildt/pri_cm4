@@ -1,42 +1,61 @@
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
-#include <fstream>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <linux/i2c-dev.h>
+
 #include <iostream>
-#include <sstream>
 
-// example for /dev/i2c-10
-// command: i2cset -y 10 0x2f 0x30 0x00
-// -y: disable interactive mode (don't wait for the user)
-// 10: the number or name of the I2C bus to be scanned
-// 0x2f: the address of the chip on that bus
-// 0x30: the address on that chip to write to
-// 0x00: the value to write to that location on the chip
-
-using std::hex;
 using std::to_string;
-using std::string;
-using std::ofstream;
-using std::stringstream;
 
 int main(void)
 {
-
-    ofstream file("/dev/i2c-10");
-    if (file.is_open())
+    int file;
+    const char *filename = "/dev/i2c-10";
+    if ((file = open(filename, O_RDWR)) < 0)
     {
-        int byte = 0;
-        while (true)
-        {
-            string command = "i2cset -y 10 0x2f 0x30 0x";
-            if(byte < 255) byte++;
-            float sum = (byte / 255.0) * 100;
-            string sum_str = to_string(sum);
-            stringstream sstream;
-            sstream << hex << byte;
-            system(command.append(sstream.str()).c_str());
-            system(string("echo ").append(command).append(" ").append(sum_str).c_str());
-            sleep(1);
-        }
+        perror("Failed to open the i2c bus");
+        exit(1);
     }
-    return -1;
+
+    int addr = 0x2f; // The I2C address of the ADC
+    int reg = 0x30;
+    if (ioctl(file, I2C_SLAVE, addr) < 0)
+    {
+        printf("Failed to acquire bus access %d on %d and/or talk to slave.\n", addr, reg);
+        exit(1);
+    }
+
+    char buf[2] = {(char)reg, (char)125};
+
+    if (write(file, buf, 2) < 0)
+    {
+        /* ERROR HANDLING: i2c transaction failed */
+        printf("Failed to read from the i2c bus.\n");
+        printf("output %s", buf);
+        printf("\n\n");
+        exit(1);
+    }
+
+    buf[0] = 2;
+
+    if (read(file, buf, 1) < 0)
+    {
+        /* ERROR HANDLING: i2c transaction failed */
+        printf("Failed to read from the i2c bus.\n");
+        printf(buf);
+        printf("\n\n");
+        exit(1);
+    }
+
+    while (true)
+    {
+        const float sum = buf[0] / 255.0 * 100;
+        std::string tmp = "echo " + to_string(sum);
+        system(tmp.c_str());
+        sleep(1);
+    }
 }
