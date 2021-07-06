@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <iostream>
 #include <unistd.h>
+#include <time.h>
 #include <sys/ioctl.h>
 #include <linux/i2c-dev.h>
 
@@ -13,42 +14,32 @@ using std::to_string;
 
 int main(void)
 {
+    struct timespec SLEEP_TIME = {0, 500000000};
+
     do
     {
-        char16_t TEMP_BUFFER;
-        int TEMP_DESCRIPTOR;
-        string TEMP_NAME = "/sys/devices/virtual/thermal/thermal_zone0/temp";
-        if ((TEMP_DESCRIPTOR = open(TEMP_NAME.c_str(), O_RDONLY)) < 0)
-            exit(1);
-
-        read(TEMP_DESCRIPTOR, &TEMP_BUFFER, sizeof(char16_t));
-        close(TEMP_DESCRIPTOR);
-        int myval = TEMP_BUFFER;
-        string temperature = string("echo temp ").append(to_string(myval));
-        system(temperature.c_str());
-
-        int FILE_DESCRIPTOR;
-        char I2C_CHIP_ADDRESS = 0x2f;
-        char I2C_CHIP_REGISTER = 0x30;
-        char I2C_INIT_VALUE = 0x00;
+        int FD_PWM_FAN;
+        char I2C_PWM_FAN_CHIP_ADDRESS = 0x2f;
+        char I2C_PWM_FAN_CHIP_REGISTER = 0x30;
+        char I2C_PWM_FAN_INIT_VALUE = 0x20;
         string FILE_NAME = "/dev/i2c-10";
-        char BUFFER[] = {I2C_CHIP_REGISTER, I2C_INIT_VALUE};
+        char BUFFER[] = {I2C_PWM_FAN_CHIP_REGISTER, I2C_PWM_FAN_INIT_VALUE};
 
-        if ((FILE_DESCRIPTOR = open(FILE_NAME.c_str(), O_RDWR)) < 0)
+        if ((FD_PWM_FAN = open(FILE_NAME.c_str(), O_RDWR)) < 0)
             exit(1);
 
-        if (ioctl(FILE_DESCRIPTOR, I2C_SLAVE, I2C_CHIP_ADDRESS) < 0)
+        if (ioctl(FD_PWM_FAN, I2C_SLAVE, I2C_PWM_FAN_CHIP_ADDRESS) < 0)
             exit(1);
 
-        if (pwrite(FILE_DESCRIPTOR, BUFFER, 2, 0) < 0)
+        if (pwrite(FD_PWM_FAN, BUFFER, 2, 0) < 0)
             exit(1);
 
-        pread(FILE_DESCRIPTOR, BUFFER, 1, 0);
-        close(FILE_DESCRIPTOR);
+        pread(FD_PWM_FAN, BUFFER, 1, 0);
+        close(FD_PWM_FAN);
         const float sum = (int)BUFFER[0] / 255.0 * 100;
         string tmp = " \"fan: %.2f\n\" " + to_string(sum);
         system(string("printf").append(tmp).c_str());
 
-        sleep(1);
+        nanosleep(&SLEEP_TIME, &SLEEP_TIME);
     } while (true);
 }
