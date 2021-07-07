@@ -16,7 +16,6 @@ using std::runtime_error;
 using std::string;
 using std::stringstream;
 using std::to_string;
-using std::uint16_t;
 
 #define I2C_PWM_FAN_CHIP_ADDRESS 0x2f
 #define I2C_PWM_FAN_CHIP_REGISTER 0x30
@@ -30,7 +29,7 @@ using std::uint16_t;
 int get_temp(const char *);
 
 int main(void) {
-  struct timespec SLEEP_TIME = {0, 250000000};
+  struct timespec SLEEP_TIME = {0, 175000000};
 
   int FD_PWM_FAN;
   char BUFFER[] = {I2C_PWM_FAN_CHIP_REGISTER, I2C_PWM_FAN_INIT_VALUE};
