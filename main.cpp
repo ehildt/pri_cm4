@@ -2,10 +2,11 @@
 #include <fstream>
 #include <iostream>
 #include <linux/i2c-dev.h>
-#include <sstream>
 #include <sys/ioctl.h>
 #include <time.h>
 #include <unistd.h>
+
+#include "libs/cpu-temp.hpp"
 
 using std::cerr;
 using std::cout;
@@ -14,7 +15,6 @@ using std::getline;
 using std::ifstream;
 using std::runtime_error;
 using std::string;
-using std::stringstream;
 using std::to_string;
 
 #define I2C_PWM_FAN_CHIP_ADDRESS 0x2f
@@ -26,15 +26,13 @@ using std::to_string;
 #define FAN_MAX_DBA 19.6
 #define FAN_TMP_OFFSET 0.085
 
-int get_temp(const char *);
-
 int main(void) {
   struct timespec SLEEP_TIME = {0, 175000000};
 
   int FD_PWM_FAN;
   char BUFFER[] = {I2C_PWM_FAN_CHIP_REGISTER, I2C_PWM_FAN_INIT_VALUE};
 
-  int milli_celsius = get_temp("/sys/class/thermal/thermal_zone0/temp");
+  int milli_celsius = getCpuTemp();
   float celsius = milli_celsius / 1000.0;
   float fallingNum = 0;
 
@@ -65,7 +63,7 @@ int main(void) {
                       to_string(fan_dba) + " " + to_string(celsius);
     system(string("printf").append(fanSpeed).c_str());
 
-    milli_celsius = get_temp("/sys/class/thermal/thermal_zone0/temp");
+    milli_celsius = getCpuTemp();
     celsius = milli_celsius / 1000.0;
 
     fallingNum = celsius > fallingNum ? celsius : (fallingNum - FAN_TMP_OFFSET);
@@ -87,20 +85,4 @@ int main(void) {
     nanosleep(&SLEEP_TIME, &SLEEP_TIME);
 
   } while (true);
-}
-
-int get_temp(const char *file) {
-  auto ifs = ifstream{file};
-
-  if (!ifs.good())
-    throw runtime_error(string("Error: unable to open file ").append(file));
-
-  int num;
-  string line;
-  stringstream ss;
-  getline(ifs, line);
-  ifs.close();
-  ss << line;
-  ss >> num;
-  return num;
 }
