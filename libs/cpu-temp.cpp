@@ -14,7 +14,7 @@ using std::stringstream;
  * /sys/class/thermal/thermal_zone0/temp
  * @return cpu temp in milli celsius
  */
-int getCpuTemp() {
+int get_cpu_temp() {
   auto ifs = ifstream{vfs};
 
   if (!ifs.good())
