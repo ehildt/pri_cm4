@@ -10,9 +10,9 @@
 #define FAN_MAX_RPM 5000
 #define FAN_MAX_DBA 19.6
 #define FAN_TMP_OFFSET 0.085
-#define SLEEP_TIME_NANOSECONDS 175000000
+#define NANOSECONDS 200000000
 #define ZERO 0
-#define TEMPERATURE_TARGET 45000
+#define TEMPERATURE_TARGET 50000
 
 using std::cout;
 using std::endl;
@@ -21,21 +21,34 @@ using std::runtime_error;
 using std::string;
 using std::stringstream;
 
-struct timespec SLEEP_TIME = {ZERO, SLEEP_TIME_NANOSECONDS};
-char PWM_FAN_BUFFER[] = {I2C_PWM_FAN_CHIP_REGISTER, I2C_PWM_FAN_INIT_VALUE};
-
 void control_pwm_fan() {
-  reset_pwm_fan();
+  int I2C_10_FD = -1;
+  struct timespec SLEEP_TIME = {ZERO, NANOSECONDS};
+  char PWM_FAN_BUFFER[] = {I2C_PWM_FAN_CHIP_REGISTER, I2C_PWM_FAN_INIT_VALUE};
+  int new_celsius = get_cpu_temp();
+  int old_celsius = new_celsius;
+
+  init_i2c_10(I2C_10_FD, PWM_FAN_BUFFER);
+
   do {
-    int new_celsius = get_cpu_temp();
-    bool temp_limit_reached = new_celsius > TEMPERATURE_TARGET;
-    temp_limit_reached ? accelerate_pwm_fan(5) : decelerate_pwm_fan(5);
+    system("clear");
+    new_celsius = get_cpu_temp();
+
+    cout << (old_celsius + new_celsius) / 2 << endl;
+
+    if ((old_celsius + new_celsius) / 2 > TEMPERATURE_TARGET)
+      accelerate_pwm_fan(I2C_10_FD, PWM_FAN_BUFFER, 3);
+
+    else
+      decelerate_pwm_fan(I2C_10_FD, PWM_FAN_BUFFER, 15);
+
+    old_celsius = new_celsius;
     nanosleep(&SLEEP_TIME, &SLEEP_TIME);
+
   } while (true);
 }
 
-int init_i2c_10() {
-  int fd;
+void init_i2c_10(int &fd, char *buffer) {
 
   if ((fd = open(FAN_I2C_CHL, O_RDWR)) < 0)
     throw runtime_error(string("Error: opening device ").append(FAN_I2C_CHL));
@@ -50,52 +63,42 @@ int init_i2c_10() {
     throw runtime_error(error_msg);
   }
 
-  return fd;
+  buffer[0] = I2C_PWM_FAN_CHIP_REGISTER;
+  buffer[1] = I2C_PWM_FAN_INIT_VALUE;
+  write(fd, buffer, 2);
 }
 
-void reset_pwm_fan() {
-  int fd = init_i2c_10();
-  pwrite(fd, PWM_FAN_BUFFER, 2, 0);
-  close(fd);
-}
+void accelerate_pwm_fan(int fd, char *buffer, char val) {
+  char speed = buffer[1];
 
-void accelerate_pwm_fan(unsigned char val) {
-  read_pwm_fan_speed();
-
-  if (PWM_FAN_BUFFER[0] + val > 255)
+  if (speed == I2C_PWM_FAN_MAX_VALUE)
     return;
 
-  unsigned char speed = PWM_FAN_BUFFER[0] + val;
+  else if ((speed + val) <= I2C_PWM_FAN_MAX_VALUE)
+    speed += val;
 
-  cout << (int)speed << endl;
+  else if (speed > (I2C_PWM_FAN_MAX_VALUE - val) &&
+           speed < I2C_PWM_FAN_MAX_VALUE)
+    speed = I2C_PWM_FAN_MAX_VALUE;
 
-  int fd = init_i2c_10();
-  PWM_FAN_BUFFER[0] = I2C_PWM_FAN_CHIP_REGISTER;
-  PWM_FAN_BUFFER[1] = speed;
-  pwrite(fd, PWM_FAN_BUFFER, 2, 0);
-  close(fd);
+  buffer[0] = I2C_PWM_FAN_CHIP_REGISTER;
+  buffer[1] = speed;
+  write(fd, buffer, 2);
 }
 
-void decelerate_pwm_fan(unsigned char val) {
-  read_pwm_fan_speed();
+void decelerate_pwm_fan(int fd, char *buffer, char val) {
+  char speed = buffer[1];
 
-  if (PWM_FAN_BUFFER[0] - val < 0)
+  if (speed == I2C_PWM_FAN_INIT_VALUE)
     return;
 
-  unsigned char speed = PWM_FAN_BUFFER[0] - val;
+  else if ((speed - val) >= I2C_PWM_FAN_INIT_VALUE)
+    speed -= val;
 
-  cout << (int)speed << endl;
+  else if (speed > I2C_PWM_FAN_INIT_VALUE && speed <= val)
+    speed = I2C_PWM_FAN_INIT_VALUE;
 
-  int fd = init_i2c_10();
-  PWM_FAN_BUFFER[0] = I2C_PWM_FAN_CHIP_REGISTER;
-  PWM_FAN_BUFFER[1] = speed;
-  write(fd, PWM_FAN_BUFFER, 2);
-  close(fd);
-}
-
-unsigned char read_pwm_fan_speed() {
-  int fd = init_i2c_10();
-  pread(fd, PWM_FAN_BUFFER, 1, 0);
-  close(fd);
-  return PWM_FAN_BUFFER[0];
+  buffer[0] = I2C_PWM_FAN_CHIP_REGISTER;
+  buffer[1] = speed;
+  write(fd, buffer, 2);
 }
