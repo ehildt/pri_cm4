@@ -34,8 +34,6 @@ void control_pwm_fan() {
     system("clear");
     new_celsius = get_cpu_temp();
 
-    cout << (old_celsius + new_celsius) / 2 << endl;
-
     if ((old_celsius + new_celsius) / 2 > TEMPERATURE_TARGET)
       accelerate_pwm_fan(I2C_10_FD, PWM_FAN_BUFFER, 3);
 
